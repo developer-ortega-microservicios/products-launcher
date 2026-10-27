@@ -1,0 +1,30 @@
+# Variables de entorno (se sube solo .env.example)
+.env
+.env.*
+!.env.example
+
+# Dependencias y build
+node_modules/
+dist/
+
+# Datos locales de bases de datos
+postgres/
+*.db
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Skills y configuración de asistentes de IA
+.claude/
+.agents/
+.windsurf/
+.cursor/
+.codex/
+.gemini/
