@@ -88,6 +88,7 @@ services:
       - PORT=3004
       - NATS_SERVERS=nats://nats-server:4222
       - DATABASE_URL=${MONGO_DB}AuthDB
+      - JWT_SECRET=${JWT_SECRET}
 
 volumes:
   orders-db-data:
