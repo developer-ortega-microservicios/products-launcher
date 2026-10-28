@@ -11,7 +11,9 @@ Cliente HTTP
      │
      ▼
 client-gateway :3000 ──NATS (:4222)──→ products-ms (SQLite)
-                     └─────────────→ orders-ms ──→ PostgreSQL (orders-db :5432)
+                     ├─────────────→ orders-ms ──→ PostgreSQL (orders-db :5432)
+                     ├─────────────→ payments-ms ──→ Stripe (webhooks)
+                     └─────────────→ auth-ms ──→ MongoDB
 ```
 
 | Servicio | Repositorio | Descripción |
@@ -19,6 +21,8 @@ client-gateway :3000 ──NATS (:4222)──→ products-ms (SQLite)
 | `client-gateway` | [client-gateway](https://github.com/developer-ortega-microservicios/client-gateway) | API Gateway: único punto de entrada HTTP |
 | `products-ms` | [products-ms](https://github.com/developer-ortega-microservicios/products-ms) | Microservicio de productos (Prisma + SQLite) |
 | `orders-ms` | [orders-ms](https://github.com/developer-ortega-microservicios/orders-ms) | Microservicio de órdenes (Prisma + PostgreSQL) |
+| `payments-ms` | [payments-ms](https://github.com/developer-ortega-microservicios/payments-ms) | Pagos con Stripe y webhooks (en desarrollo) |
+| `auth-ms` | [auth-ms](https://github.com/developer-ortega-microservicios/auth-ms) | Autenticación con JWT, bcrypt, Prisma y MongoDB (en desarrollo) |
 | `nats-server` | imagen `nats` | Bus de mensajes entre servicios |
 | `orders-db` | imagen `postgres:16.2` | Base de datos de órdenes |
 
