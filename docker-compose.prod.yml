@@ -18,7 +18,7 @@ services:
     build:
       context: ./products-ms
       dockerfile: dockerfile.prod
-    image: northamerica-northeast1-docker.pkg.dev/seismic-hexagon-474712-i2/image-registry/product-ms
+    image: northamerica-northeast1-docker.pkg.dev/seismic-hexagon-474712-i2/image-registry/products-ms
     environment:
       - PORT=3001
       - NATS_SERVERS=nats://nats-server:4222
@@ -26,11 +26,11 @@ services:
 
   orders-ms:
     build:
-      context: northamerica-northeast1-docker.pkg.dev/seismic-hexagon-474712-i2/image-registry/orders-ms
+      context: ./orders-ms
       dockerfile: dockerfile.prod
       args:
         - ORDERS_MS_DATABASE=${ORDERS_MS_DATABASE}
-    image: orders-ms-prod
+    image: northamerica-northeast1-docker.pkg.dev/seismic-hexagon-474712-i2/image-registry/orders-ms
     environment:
       - PORT=3002
       - NATS_SERVERS=nats://nats-server:4222
