@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: payments-ms
+  name: payments-ms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payments-ms
+  template:
+    metadata:
+      labels:
+        app: payments-ms
+    spec:
+      containers:
+        - image: northamerica-northeast1-docker.pkg.dev/seismic-hexagon-474712-i2/image-registry/payments-ms:latest
+          name: payments-ms
+          ports:
+            - containerPort: 3003
+          env:
+            - name: PORT
+              value: "3003"
+            - name: NATS_SERVERS
+              value: nats://nats-server:4222
+            # IP del Ingress (efímera: si se recrea el Ingress, cambia y hay que actualizarla)
+            - name: STRIPE_SUCCESS_URL
+              value: http://136.81.113.39/payments/success
+            - name: STRIPE_CANCEL_URL
+              value: http://136.81.113.39/payments/cancelled
+            - name: STRIPE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: payments-secrets
+                  key: STRIPE_SECRET
+            - name: STRIPE_ENDPOINT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: payments-secrets
+                  key: STRIPE_ENDPOINT_SECRET
+          # Health check del balanceador: esta ruta responde 200
+          readinessProbe:
+            httpGet:
+              path: /payments/success
+              port: 3003
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi

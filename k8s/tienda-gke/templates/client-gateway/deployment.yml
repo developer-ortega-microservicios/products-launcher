@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: client-gateway
+  name: client-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client-gateway
+  template:
+    metadata:
+      labels:
+        app: client-gateway
+    spec:
+      containers:
+        - image: northamerica-northeast1-docker.pkg.dev/seismic-hexagon-474712-i2/image-registry/client-gateway:latest
+          name: client-gateway
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: NATS_SERVERS
+              value: nats://nats-server:4222
+          # GKE usa esta ruta como health check del balanceador (debe responder 200)
+          readinessProbe:
+            httpGet:
+              path: /api/products
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi

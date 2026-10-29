@@ -2,7 +2,7 @@
 
 Repositorio que reúne y levanta todo el proyecto de microservicios con **NestJS** (curso [NestJS + Microservicios](https://www.udemy.com/course/nestjs-microservicios/), Udemy, DevTalles). Los servicios viven en repositorios independientes y aquí se enlazan como **submódulos de Git**, junto con el `docker-compose.yml` que los ejecuta.
 
-> Proyecto de práctica, **en progreso**. Se actualiza a medida que avanza el curso.
+> Proyecto de práctica completado y desplegado en **Google Kubernetes Engine (GKE Autopilot)** con Helm, un Ingress único y pagos con Stripe en modo de prueba.
 
 ## Arquitectura
 
@@ -21,8 +21,8 @@ client-gateway :3000 ──NATS (:4222)──→ products-ms (SQLite)
 | `client-gateway` | [client-gateway](https://github.com/developer-ortega-microservicios/client-gateway) | API Gateway: único punto de entrada HTTP |
 | `products-ms` | [products-ms](https://github.com/developer-ortega-microservicios/products-ms) | Microservicio de productos (Prisma + SQLite) |
 | `orders-ms` | [orders-ms](https://github.com/developer-ortega-microservicios/orders-ms) | Microservicio de órdenes (Prisma + PostgreSQL) |
-| `payments-ms` | [payments-ms](https://github.com/developer-ortega-microservicios/payments-ms) | Pagos con Stripe y webhooks (en desarrollo) |
-| `auth-ms` | [auth-ms](https://github.com/developer-ortega-microservicios/auth-ms) | Autenticación con JWT, bcrypt, Prisma y MongoDB (en desarrollo) |
+| `payments-ms` | [payments-ms](https://github.com/developer-ortega-microservicios/payments-ms) | Pagos con Stripe Checkout y webhooks |
+| `auth-ms` | [auth-ms](https://github.com/developer-ortega-microservicios/auth-ms) | Autenticación con JWT, bcrypt, Prisma y MongoDB |
 | `nats-server` | imagen `nats` | Bus de mensajes entre servicios |
 | `orders-db` | imagen `postgres:16.2` | Base de datos de órdenes |
 
@@ -43,15 +43,11 @@ client-gateway :3000 ──NATS (:4222)──→ products-ms (SQLite)
    git submodule update --init --recursive
    ```
 
-2. Crear el archivo `.env` a partir del ejemplo y completar la contraseña de PostgreSQL (usar letras y números, sin caracteres especiales):
+2. Crear el archivo `.env` a partir del ejemplo y completar los valores (PostgreSQL con letras y números, sin caracteres especiales; claves de Stripe **de prueba**; cadena de MongoDB y `JWT_SECRET` para `auth-ms`):
    ```bash
    cp .env.example .env
    ```
-   ```
-   POSTGRES_USER=postgres
-   POSTGRES_PASSWORD=tu_clave
-   POSTGRES_DB=ordersdb
-   ```
+   > El `.env` está en `.gitignore`: nunca se sube. Solo se versiona `.env.example`, sin valores reales.
 
 3. Construir y levantar todos los servicios:
    ```bash
@@ -82,6 +78,43 @@ Ejemplo para crear una orden:
 }
 ```
 
+## Despliegue en Kubernetes
+
+Los charts de Helm están en `k8s/`:
+
+| Chart | Destino | Notas |
+|-------|---------|-------|
+| `k8s/tienda` | Kubernetes local (Docker Desktop) | Servicios `NodePort`, `imagePullSecrets` para Artifact Registry |
+| `k8s/tienda-gke` | GKE Autopilot | Servicios `ClusterIP` + un solo **Ingress** (`/payments/*` → payments-ms, `/*` → client-gateway), health checks por `readinessProbe` y requests de recursos reducidos |
+
+Flujo de despliegue en GKE:
+
+1. Construir y subir las imágenes a **Artifact Registry** con Cloud Build (`cloudbuild.yml` en cada servicio) o con `docker build` + `docker push`.
+2. Crear los secrets en el clúster (no se versionan):
+   ```bash
+   kubectl create secret generic payments-secrets --from-literal=STRIPE_SECRET=... --from-literal=STRIPE_ENDPOINT_SECRET=...
+   kubectl create secret generic auth-secrets --from-literal=DATABASE_URL=... --from-literal=JWT_SECRET=...
+   kubectl create secret generic orders-secrets --from-literal=database_url=...
+   ```
+3. Instalar el chart:
+   ```bash
+   cd k8s
+   helm install tienda-gke ./tienda-gke
+   kubectl get ingress   # esperar a que aparezca la IP pública
+   ```
+4. Poner esa IP en `STRIPE_SUCCESS_URL` / `STRIPE_CANCEL_URL` del deployment de `payments-ms`, ejecutar `helm upgrade tienda-gke ./tienda-gke` y crear en Stripe (modo prueba) un webhook hacia `http://<IP>/payments/webhook` con el evento `checkout.session.completed`.
+
+Comandos útiles de Helm y kubectl en [K8s.README.md](K8s.README.md).
+
+> La IP del Ingress es efímera: si se recrea, hay que actualizar las URLs y el webhook. Al terminar de probar: `helm uninstall tienda-gke` y borrar el clúster para evitar costos.
+
+## Seguridad
+
+- Los `.env` están ignorados en el launcher y en cada microservicio; solo se suben los `.env.example`.
+- Los secrets de Kubernetes se crean con `kubectl`, nunca como archivos del repositorio.
+- La llave JSON de la cuenta de servicio de Google Cloud debe guardarse fuera del repositorio.
+- Stripe se usa solo en **modo de prueba**.
+
 ## Trabajar con los submódulos
 
 Los submódulos apuntan a un commit concreto de cada servicio. Para traer los últimos cambios de todos:
@@ -107,4 +140,4 @@ docker compose down -v                  # Apagar y borrar los datos
 
 ## Stack técnico
 
-NestJS · TypeScript · Prisma · NATS · PostgreSQL · SQLite · Docker Compose
+NestJS · TypeScript · Prisma · NATS · PostgreSQL · MongoDB · SQLite · JWT · Stripe · Docker · Kubernetes (GKE) · Helm · Google Cloud Build · Artifact Registry
