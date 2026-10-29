@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: products-ms
+  name: products-ms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: products-ms
+  template:
+    metadata:
+      labels:
+        app: products-ms
+    spec:
+      imagePullSecrets:
+        - name: gcr-json-key
+      containers:
+      - image: northamerica-northeast1-docker.pkg.dev/seismic-hexagon-474712-i2/image-registry/products-ms
+        name: products-ms
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3001
+        env:
+        - name: PORT
+          value: "3001"
+        - name: NATS_SERVERS
+          value: nats://nats-server:4222
+        - name: DATABASE_URL
+          value: file:./dev.db
+        resources: {}

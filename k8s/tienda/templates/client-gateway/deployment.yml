@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: client-gateway
+  name: client-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client-gateway
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: client-gateway
+    spec:
+      imagePullSecrets:
+        - name: gcr-json-key
+      containers:
+      - image: northamerica-northeast1-docker.pkg.dev/seismic-hexagon-474712-i2/image-registry/client-gateway
+        name: client-gateway
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+        env:
+        - name: PORT
+          value: "3000"
+        - name: NATS_SERVERS
+          value: nats://nats-server:4222
+        resources: {}
+status: {}
