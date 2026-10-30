@@ -102,7 +102,7 @@ Flujo de despliegue en GKE:
    helm install tienda-gke ./tienda-gke
    kubectl get ingress   # esperar a que aparezca la IP pública
    ```
-4. Poner esa IP en `STRIPE_SUCCESS_URL` / `STRIPE_CANCEL_URL` del deployment de `payments-ms`, ejecutar `helm upgrade tienda-gke ./tienda-gke` y crear en Stripe (modo prueba) un webhook hacia `http://<IP>/payments/webhook` con el evento `checkout.session.completed`.
+4. Poner esa IP en `STRIPE_SUCCESS_URL` / `STRIPE_CANCEL_URL` del deployment de `payments-ms`, ejecutar `helm upgrade tienda-gke ./tienda-gke` y crear en Stripe (modo prueba) un webhook hacia `http://<IP>/payments/webhook` con el evento `charge.succeeded`.
 
 Comandos útiles de Helm y kubectl en [K8s.README.md](K8s.README.md).
 
